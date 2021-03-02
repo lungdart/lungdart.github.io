@@ -15,6 +15,6 @@ My personal writeups for various CTFs and challenges that I've completed
 * [The Great Escape](writeups/thm/thegreatescape.md)
 
 ## Contact
-e-mail: shawn at lungdart[.]net
-[github](https://github.com/lungdart)
-[linkedin](https://www.linkedin.com/in/shawn-boutilier)
+* shawn at lungdart[.]net
+* [github](https://github.com/lungdart)
+* [linkedin](https://www.linkedin.com/in/shawn-boutilier)
