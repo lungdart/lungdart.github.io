@@ -1,37 +1,20 @@
-## Welcome to GitHub Pages
+## Writeups
+My personal writeups for various CTFs and challenges that I've completed
 
-You can use the [editor on GitHub](https://github.com/lungdart/lungdart.github.io/edit/main/README.md) to maintain and preview the content for your website in Markdown files.
+### Hack the Box
+* [Passage](writeups/htb/passage.md)
+* [OpenKeys](writeups/htb/openkeys.md)
+* [Academy](writeups/htb/academy.md)
+* [Time](writeups/htb/time.md)
+* [ScriptKiddie](writeups/htb/scriptkiddie.md)
+* [Delivery](writeups/htb/delivery.md)
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+### Try Hack Me
+* [Wonderland](writeups/thm/wonderland.md)
+* [The Market Place](writeups/thm/themarketplace.md)
+* [The Great Escape](writeups/thm/thegreatescape.md)
 
-### Markdown
-
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/lungdart/lungdart.github.io/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+## Contact
+e-mail: shawn at lungdart[.]net
+[github](https://github.com/lungdart)
+[linkedin](https://www.linkedin.com/in/shawn-boutilier)
