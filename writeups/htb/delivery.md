@@ -1,21 +1,21 @@
-## Hackthebox.eu - Delivery
+# Hackthebox.eu - Delivery
 **February 7th, 2021**
 
 This box leveraged a help desk ticket system to get read access to e-mails from a domain outside our control. This e-mail could be used to sign up for a corporate chat system, giving us access to private corporate messages which included credential details. The root password was then pulled off of a database and cracked using tips that were found in the corporate chat system.
 
-### Quick summary
+## Quick summary
 * Update your hosts file
 * Create an account on *OSticket* and register a new help request
 * Abuse the given email address to sign up for mattermost and get credentials
 * Read the mattermost configuration to get the database credentials
 * Pull the root user from the database and crack the password
 
-#### Tools needed
+### Tools needed
 * hashcat
 * hashcat rules file
 
-### Detailed steps
-#### Port scan
+## Detailed steps
+### Port scan
 Port scan reveals it's a linux box with SSH and a web server
 ```bash
 ┌──(lungdart㉿kali)-[~/htb/delivery]
@@ -39,7 +39,7 @@ Service detection performed. Please report any incorrect results at https://nmap
 # Nmap done at Sun Feb  7 16:05:12 2021 -- 1 IP address (1 host up) scanned in 8.65 seconds
 ```
 
-#### Web server
+### Web server
 Browse the web server and have a look around. You'll find links that require hostname access, so we add that to our ```/etc/hosts``` file
 ```bash
 ┌──(lungdart㉿kali)-[~/htb/delivery]
@@ -51,7 +51,7 @@ Browsing further we see the following message in the *contact us* modal:
 
 We're done with this page now.
 
-##### helpdesk.delivery.htb (OSTicket)
+#### helpdesk.delivery.htb (OSTicket)
 Head on over to the help desk first and open a new ticket. When you finish the form you're given the following message (Your ticket number will be different):
 ```
 You may check the status of your ticket, by navigating to the Check Status page using ticket id: 7208454.
@@ -63,7 +63,7 @@ Note the email address we can use to add on to the ticket uses the same domain n
 
 Open up the newly created support ticket using your *OSTicket* signup e-mail and the ticket number provided, and then we'll move on to *MatterMost*
 
-##### delivery.htb (Matter Most)
+#### delivery.htb (Matter Most)
 Now we can register a new user using the support ticket email that *OSTicket* gave us earlier. Once you're finished registering, you can skip the tutorial, and you'll finally be greeted to a chatroom with some fantastic information!
 ```
 The credentials for the server are maildeliverer:Youve_G0t_Mail!
@@ -72,8 +72,8 @@ Please stop using PleaseSubscribe! and variants as passwords. PleaseSubscribe! m
 
 SSH in with the given credentials, and grab ```~/user.txt``` and submit the flag
 
-#### Owning Root
-##### Naive attempts
+### Owning Root
+#### Naive attempts
 Once we're in the first thing we should try is that other password that was hinted at, but sadly it doesn't work
 ```bash
 maildeliverer@Delivery:~$ su
@@ -92,7 +92,7 @@ Password:
 su: Authentication failure
 ```
 
-##### Gaining DB access
+#### Gaining DB access
 At this point the best method of attack is to look through the configurations for OSTicket and MatterMost. I google matter most first, and found a reference to a ```config/config.json```. Let's find where it's located
 ```bash
 maildeliverer@Delivery:~$ find / -name config.json 2>/dev/null
@@ -145,7 +145,7 @@ In here there's a very interesting line! Seems to give up the database credentia
 "DataSource": "mmuser:Crack_The_MM_Admin_PW@tcp(127.0.0.1:3306)/mattermost?charset=utf8mb4,utf8\u0026readTimeout=30s\u0026writeTimeout=30s",
 ```
 
-#### Extracting credentials from the DB
+### Extracting credentials from the DB
 Login to the database
 ```bash
 maildeliverer@Delivery:~$ mysql -u mmuser -p
@@ -243,7 +243,7 @@ MariaDB [mattermost]> select Username, Password from Users;
 
 ```
 
-##### Cracking the root password
+#### Cracking the root password
 Now that we have the root password hash, and suspect it's variant of *PleaseSubscribe!*, we can grab hashcat, and a rule file from kali linux and attmempt to crack it!
 
 First we need to create our hash list and clear text password word file to work from

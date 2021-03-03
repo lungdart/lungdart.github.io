@@ -1,20 +1,20 @@
-## Try Hack Me - Wonderland
+# Try Hack Me - Wonderland
 **February 12th, 2021**
 
 Wonderland is the only room where you want to go down a rabbit hole! Enumerating the web server gives up secret credentials, which will give you a foot hold to the box. From there, abusing a series of misconfigurations will let you traverse multiple users until you get root access.
 
-### Quick Summary
+## Quick Summary
 * Enumerate a deep, but predictable, web tree to get credentials
 * Abusing python import order to get a second user on a custom python script with sudo privileges
 * Abusing PATH order to have a setuid binary run a custom script to get a third user
 * Abusing a setuid capability on perl to get root access
 
 
-#### Tools required
+### Tools required
 * gobuster with a simple password list
 
-### Detailed steps
-#### Port scan
+## Detailed steps
+### Port scan
 Scanning the ports reveals a web server running on ```PORT```, and an sshd waiting for connection
 ```bash
 $ nmap -sC -sV -oA nmap/init 10.10.167.35
@@ -35,7 +35,7 @@ Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 
 The title ```Follow the white rabbit.``` is worthy of noting.
 
-#### Directory Traversal
+### Directory Traversal
 I ran gobuster on the server to see if it has anything interesting
 ```bash
 $ gobuster dir -w /usr/share/wordlists/dirb/directory-list-2.3-medium.txt -u http://10.10.188.189 -t 10
@@ -129,7 +129,7 @@ alice@wonderland:~$ ls -al /root/user.txt
 
 Although we can't access the root folder, the normal ```user.txt``` format is directly accessible by filename within there.
 
-#### Abusing python import order
+### Abusing python import order
 First, let's check for sudo access:
 ```bash
 alice@wonderland:~$ sudo -l
@@ -181,7 +181,7 @@ sudo -u rabbit /usr/bin/python3.6 /home/alice/walrus_and_the_carpenter.py
 rabbit@wonderland:~$ 
 ```
 
-#### Abusing PATH order
+### Abusing PATH order
 Going into ```rabbit```'s' home folder, you see a setuid binary.
 ```bash
 rabbit@wonderland:~$ cd ../rabbit/
@@ -230,7 +230,7 @@ hatter@wonderland:/home/rabbit$
 
 Now we are the hatter user.
 
-#### Abusing capabilities
+### Abusing capabilities
 First off, you're going to see a password file. Unfortuntly, this isn't a way forward but a check point. To clean our environment, su to the hatter user
 ```bash
 hatter@wonderland:/home/rabbit$ cd ../hatter

