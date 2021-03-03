@@ -1,3 +1,5 @@
 theme: jekyll-theme-hacker
-title: lungdart.net/blog
+title: blog
 description: Software and Security
+github:
+  is_project_page: false
