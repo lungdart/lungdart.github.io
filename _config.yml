@@ -1,6 +1,21 @@
 theme: jekyll-theme-midnight
 name: blog
 description: Software and Security
+disqus:
+google_analytics:
+permalink: /:title/
+version: v1.2.0
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    css_class: 'highlight'
+sass:
+  style: :expanded
+gems:
+  - jekyll-sitemap
+  - jekyll-feed
+  - jekyll-admin
 footer-links:
   dribbble:
   email: shawn at lungdart[.]net
