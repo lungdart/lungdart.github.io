@@ -1,8 +1,6 @@
 theme: jekyll-theme-hacker
 name: blog
 description: Software and Security
-github:
-  is_project_page: false
 footer-links:
   dribbble:
   email: shawn at lungdart[.]net
