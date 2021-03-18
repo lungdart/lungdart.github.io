@@ -1,5 +1,22 @@
 theme: jekyll-theme-hacker
-title: blog
+name: blog
 description: Software and Security
 github:
   is_project_page: false
+footer-links:
+  dribbble:
+  email:
+  facebook:
+  flickr:
+  github: lungdart
+  instagram:
+  linkedin: shawn-boutilier
+  pinterest:
+  rss:
+  twitter:
+  stackoverflow:
+  youtube:
+  googleplus:
+exclude:
+  - LICENSE
+  - CNAME
